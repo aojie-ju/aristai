@@ -1,0 +1,55 @@
+version: 0.2
+
+# Two images from one source tree: the Forum/AristAI API (which the Celery
+# worker also runs from) and the Syllabus tool. Modelled on nac_aws's
+# buildspec, with one deliberate difference — see the smoke step.
+env:
+  variables:
+    DOCKER_BUILDKIT: "1"
+
+phases:
+  pre_build:
+    commands:
+      - REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+      - aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+      - GIT_SHA="${GIT_SHA:-$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}" | cut -c1-7)}"
+      - docker pull "$REGISTRY/aristai-api:latest" || true
+      - docker pull "$REGISTRY/aristai-syllabus:latest" || true
+
+  build:
+    commands:
+      - docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from "$REGISTRY/aristai-api:latest" -f Dockerfile -t "$REGISTRY/aristai-api:$GIT_SHA" -t "$REGISTRY/aristai-api:latest" .
+      - docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from "$REGISTRY/aristai-syllabus:latest" -f Dockerfile.syllabus -t "$REGISTRY/aristai-syllabus:$GIT_SHA" -t "$REGISTRY/aristai-syllabus:latest" .
+
+      # SMOKE: does it stay up, not does it answer.
+      #
+      # nac_aws curls /api/health here, which it can do because it has a
+      # file-backed provider that needs no database. These two do not: the API
+      # opens Postgres and Redis at import time, so an HTTP check would fail in
+      # CodeBuild for a reason that says nothing about the image. Asserting the
+      # process is still alive after five seconds still catches what actually
+      # breaks a Python image — a missing module, a bad CMD, a dependency that
+      # did not install — and it can never pass for the wrong reason.
+      - docker run -d --name smoke-syllabus "$REGISTRY/aristai-syllabus:$GIT_SHA"
+      - sleep 5
+      - test "$(docker inspect -f '{{.State.Running}}' smoke-syllabus)" = "true" || { docker logs smoke-syllabus; exit 1; }
+      - docker rm -f smoke-syllabus
+      - docker run -d --name smoke-api "$REGISTRY/aristai-api:$GIT_SHA" python -c "import api.main; print('import ok')"
+      - sleep 5
+      - docker logs smoke-api | grep -q "import ok" || { docker logs smoke-api; exit 1; }
+      - docker rm -f smoke-api
+
+  post_build:
+    commands:
+      # post_build runs even when build FAILED — gate it, or a broken image
+      # lands in ECR as :latest.
+      - test "$CODEBUILD_BUILD_SUCCEEDING" = "1"
+      - docker push "$REGISTRY/aristai-api:$GIT_SHA"
+      - docker push "$REGISTRY/aristai-api:latest"
+      - docker push "$REGISTRY/aristai-syllabus:$GIT_SHA"
+      - docker push "$REGISTRY/aristai-syllabus:latest"
+      - printf '%s' "$GIT_SHA" > imageTag.txt
+
+artifacts:
+  files:
+    - imageTag.txt
