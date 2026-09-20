@@ -8,11 +8,29 @@
  * them get updated and the other half keep working until the day the box goes
  * away, which is exactly the migration this file exists for.
  *
- * The API now runs on Fargate in the new account, reached through API Gateway.
- * The environment variable still wins, so a preview deployment can point
- * somewhere else without a code change; what changed is that the fallback is
- * somewhere that will still be there tomorrow.
+ * WHY THE ENVIRONMENT VARIABLE IS FILTERED RATHER THAN TRUSTED.
+ *
+ * Changing the fallback was not enough: NEXT_PUBLIC_API_URL is set in this
+ * project's Vercel settings to that same EC2 host, so it won. Proven rather
+ * than assumed — a request to forum.aristai.io carrying a unique marker showed
+ * up twice in the old box's own container log, minutes after this app had been
+ * redeployed with the new default.
+ *
+ * That variable is not configuration any more, it is a stale pointer at a
+ * machine that is being switched off, and after the shutdown it would take
+ * Forum's whole server side with it. Silently ignoring configuration is its own
+ * bad habit, so the rule is narrow and says what it is: an override is honoured
+ * unless it names the decommissioned host. A preview deployment pointing
+ * somewhere else still works.
+ *
+ * The Vercel variable should still be cleared or repointed; this only means
+ * the application is correct before anyone gets to it.
  */
+const DECOMMISSIONED_HOST = 'ec2-13-219-204-7.compute-1.amazonaws.com';
+
+const NEW_BASE = 'https://f5szbtswo8.execute-api.us-east-1.amazonaws.com';
+
+const configured = process.env.NEXT_PUBLIC_API_URL;
+
 export const BACKEND_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://f5szbtswo8.execute-api.us-east-1.amazonaws.com';
+  configured && !configured.includes(DECOMMISSIONED_HOST) ? configured : NEW_BASE;
