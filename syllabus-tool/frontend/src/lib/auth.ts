@@ -7,10 +7,14 @@ import {
 
 // Cognito configuration — shared with AristAI (forum.aristai.io)
 const COGNITO_CONFIG = {
+  // Moved 2026-09-20 off us-east-1_61m8CDReq in the AWS account being shut
+  // down, onto the pool NAC, WFP and Forum already share. One identity across
+  // the products; this app's callback URLs are already on that client. These
+  // are public identifiers that ship in the bundle either way, not secrets.
   REGION: 'us-east-1',
-  USER_POOL_ID: 'us-east-1_61m8CDReq',
-  CLIENT_ID: '5pocqbihafgjur6t5f6aoqusir',
-  DOMAIN: 'aojie-tutor-forum-968632-z74xm7.auth.us-east-1.amazoncognito.com',
+  USER_POOL_ID: 'us-east-1_dzCaMscNy',
+  CLIENT_ID: '5l8hi3jdajp0igmsb6usmpa5nh',
+  DOMAIN: 'aristai-auth.auth.us-east-1.amazoncognito.com',
 };
 
 const userPool = new CognitoUserPool({

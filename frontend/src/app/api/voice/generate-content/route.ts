@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BACKEND_BASE } from '@/lib/backend';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 60; // Content generation may take longer
 
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://ec2-13-219-204-7.compute-1.amazonaws.com:8000';
 // IMPORTANT: ElevenLabs Client Tools have limited tool execution time
 // Keep this short to avoid agent timeout - use 45 seconds max
 const REQUEST_TIMEOUT_MS = 45000;

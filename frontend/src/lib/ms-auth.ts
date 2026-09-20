@@ -1,15 +1,11 @@
 'use client';
 
+import { COGNITO_CONFIG } from './cognito-config';
+
 // Microsoft Sign-In via Cognito Hosted UI
 // This implementation is similar to google-auth.ts but for Microsoft OIDC
 
 // Configuration - AristAI User Pool (us-east-1)
-const COGNITO_CONFIG = {
-  REGION: 'us-east-1',
-  USER_POOL_ID: 'us-east-1_61m8CDReq',
-  CLIENT_ID: '5pocqbihafgjur6t5f6aoqusir',
-  DOMAIN: 'aojie-tutor-forum-968632-z74xm7.auth.us-east-1.amazoncognito.com',
-};
 
 // Storage key prefix (matches Cognito SDK format)
 const STORAGE_PREFIX = `CognitoIdentityServiceProvider.${COGNITO_CONFIG.CLIENT_ID}`;

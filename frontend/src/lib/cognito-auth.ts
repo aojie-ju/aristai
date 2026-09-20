@@ -1,5 +1,7 @@
 'use client';
 
+import { COGNITO_CONFIG } from './cognito-config';
+
 import {
   CognitoUserPool,
   CognitoUser,
@@ -10,11 +12,6 @@ import {
 } from 'amazon-cognito-identity-js';
 
 // Cognito configuration - AristAI User Pool (us-east-1)
-const COGNITO_CONFIG = {
-  REGION: 'us-east-1',
-  USER_POOL_ID: 'us-east-1_61m8CDReq',
-  CLIENT_ID: '5pocqbihafgjur6t5f6aoqusir',
-};
 
 // Initialize the User Pool
 const userPool = new CognitoUserPool({

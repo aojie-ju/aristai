@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BACKEND_BASE } from '@/lib/backend';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://ec2-13-219-204-7.compute-1.amazonaws.com:8000';
 const REQUEST_TIMEOUT_MS = 12000;
 
 const fetchWithTimeout = async (url: string, init: RequestInit, timeoutMs: number) => {

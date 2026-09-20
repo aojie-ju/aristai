@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BACKEND_BASE } from '@/lib/backend';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://ec2-13-219-204-7.compute-1.amazonaws.com:8000';
 const REQUEST_TIMEOUT_MS = 45000;  // 45s for browser automation endpoints (Chrome MCP takes ~7-10s)
 
 const API_PROXY_BASE = '/api/proxy';
