@@ -13,7 +13,19 @@ const buildTargetUrl = (request: NextRequest, pathSegments: string[], baseUrl: s
   const pathname = pathSegments.join('/');
   const url = new URL(request.url);
   const search = url.search ? url.search : '';
-  return `${baseUrl}/api/${pathname}${search}`;
+  // KEEP THE TRAILING SLASH the caller sent. Next.js drops it when it splits a
+  // catch-all route into segments, so /api/proxy/users/ became /api/users and
+  // FastAPI answered with a 307 to the slashed form — a redirect it builds from
+  // its own port, so behind a TLS terminator it points at
+  // http://<public-host>:8000/... and the fetch here fails outright.
+  //
+  // That redirect was harmless while the backend really was a plain-http box on
+  // :8000 and the invented URL happened to be true. It stopped being harmless
+  // the moment the backend moved behind API Gateway, and this is the cheaper
+  // half of the fix: not following a bad redirect beats correcting it, because
+  // the request never needed to be redirected at all.
+  const trailing = new URL(request.url).pathname.endsWith('/') && pathname !== '' ? '/' : '';
+  return `${baseUrl}/api/${pathname}${trailing}${search}`;
 };
 
 const rewriteLocationHeader = (location: string | null, baseUrl: string) => {
